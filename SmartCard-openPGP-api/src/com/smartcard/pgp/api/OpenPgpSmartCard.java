@@ -3,9 +3,11 @@ package com.smartcard.pgp.api;
 
 
 
+import java.io.ByteArrayOutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.smartcardio.Card;
@@ -166,17 +168,14 @@ public class OpenPgpSmartCard {
 		if(encrypted.length != 256) 
 			throw new IllegalArgumentException("Sorry, size has to be = 256");
 
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		outputStream.write(0);
+		outputStream.write(encrypted, 0, 201);
+		byte[] part1 = outputStream.toByteArray();
 
-		byte[] part1 = new byte[201]; 
-
-		for(int i=0;i<part1.length; i++){ // take first 0-200 spots
-			part1[i] = encrypted[i];
-		}
-
-		byte[] part2 = new byte[55];
-		for(int i=0; i<part2.length; i++){ // take 201-255
-			part2[i] = encrypted[201+i];
-		}
+		ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream( );
+		outputStream2.write(encrypted, 201, encrypted.length - 201);
+		byte[] part2 = outputStream2.toByteArray();
 
 		ResponseAPDU response1 = cardChannel.transmit(APDU.decipher(part1, true));
 		interpretResponse(response1);
